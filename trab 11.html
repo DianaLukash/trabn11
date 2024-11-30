@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #222;
+            color: #fff;
+            padding: 20px;
+            transition: background-color 0.5s ease;
+        }
+        h1 {
+            color: #ffd700;
+        }
+        form {
+            margin: 20px 0;
+        }
+        form input, form select {
+            padding: 10px;
+            font-size: 16px;
+            margin: 5px;
+        }
+        form button {
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        form button:hover {
+            background-color: #218838;
+        }
+        .message {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+        .saldo {
+            margin-top: 20px;
+            font-size: 20px;
+            color: #00ff00;
+        }
+        table {
+            margin: 20px auto;
+            width: 80%;
+            border-collapse: collapse;
+            background-color: #333;
+            color: #fff;
+        }
+        table th, table td {
+            border: 1px solid #444;
+            padding: 10px;
+            text-align: center;
+        }
+        table th {
+            background-color: #555;
+        }
+        .cheque {
+            display: none;
+            margin: 20px auto;
+            padding: 20px;
+            border: 2px solid #ffd700;
+            background-color: #fff;
+            color: #000;
+            font-family: 'Courier New', Courier, monospace;
+            text-align: left;
+            width: 80%;
+            max-width: 600px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Jogo de Cassino</h1>
+    <p>Tenta adivinhar o número secreto entre 1 e 10!</p>
+
+    <div class="saldo" id="saldo">Saldo: 100,00 €</div>
+
+    <form id="jogoForm" onsubmit="verificarPalpite(event)">
+        <input type="text" id="nomeJogador" placeholder="Escreve o teu nome" required>
+        <input type="number" id="playerInput" placeholder="palpite" min="1" max="10" required>
+        <input type="number" id="apostaInput" placeholder="valor da aposta" min="1" max="100" required>
+        <select id="modoJogo">
+            <option value="normal">Jogar Normal</option>
+            <option value="comPistas">Jogar com Pistas (-10% do Ganho)</option>
+        </select>
+        <button type="submit">Tentar</button>
+    </form>
+
+    <div class="message" id="message"></div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Palpite</th>
+                <th>Aposta (€)</th>
+                <th>Resultado</th>
+                <th>Saldo Restante (€)</th>
+            </tr>
+        </thead>
+        <tbody id="historico">
+        </tbody>
+    </table>
+
+    <div class="cheque" id="cheque">
+        <h2>Cheque</h2>
+        <p><strong>Nome:</strong> <span id="chequeNome"></span></p>
+        <p><strong>Valor:</strong> € <span id="chequeValor"></span></p>
+        <p><strong>Assinatura:</strong> Cassino xx</p>
+    </div>
+
+    <script>
+       
+        let numeroCorreto = Math.floor(Math.random() * 10) + 1;
+        let saldo = 100;
+        let jogoAtivo = true; 
+        const saldoElement = document.getElementById("saldo");
+        const historicoElement = document.getElementById("historico");
+        const chequeElement = document.getElementById("cheque");
+        const chequeNomeElement = document.getElementById("chequeNome");
+        const chequeValorElement = document.getElementById("chequeValor");
+        const body = document.body;
+
+        function atualizarSaldo(valor) {
+            saldo += valor;
+            saldoElement.textContent = `Saldo: ${saldo.toFixed(2)} euros`;
+        }
+
+        function emitirCheque(nome, valor) {
+            chequeNomeElement.textContent = nome;
+            chequeValorElement.textContent = valor.toFixed(2);
+            chequeElement.style.display = "block";
+        }
+
+        function finalizarJogo(mensagemFinal) {
+            jogoAtivo = false;
+            document.getElementById("jogoForm").style.display = "none"; 
+            mensagemFinal += "Obrigada por jogar!";
+            document.getElementById("message").textContent = mensagemFinal;
+            document.getElementById("message").style.color = "black";
+
+     
+            const nomeJogador = document.getElementById("nomeJogador").value;
+            emitirCheque(nomeJogador, saldo);
+        }
+
+        function verificarPalpite(event) {
+            event.preventDefault(); 
+
+            if (!jogoAtivo) return;
+
+            const nomeJogador = document.getElementById("nomeJogador").value;
+            const palpite = parseInt(document.getElementById("playerInput").value);
+            const aposta = parseFloat(document.getElementById("apostaInput").value);
+            const modoJogo = document.getElementById("modoJogo").value;
+            const mensagem = document.getElementById("message");
+
+            if (saldo <= 0) {
+                finalizarJogo("O teu saldo acabou!");
+                return;
+            }
+
+            if (aposta > saldo) {
+                mensagem.textContent = "Não tens saldo suficiente para essa aposta.";
+                mensagem.style.color = "red";
+                return;
+            }
+
+            let resultado;
+            let ganho = aposta * 2;
+
+            if (modoJogo === "comPistas") {
+                ganho *= 0.9;
+            }
+
+            if (palpite === numeroCorreto) {
+                mensagem.textContent = `Parabéns! Acertasteo número ${numeroCorreto}! Ganhaste ${ganho.toFixed(2)}€.`;
+                mensagem.style.color = "green";
+                body.style.backgroundColor = "#008000";
+                atualizarSaldo(ganho);
+                resultado = "Acertou";
+                finalizarJogo("!");
+            } else {
+                mensagem.textContent = `Que pena! erraste e perdeste ${aposta.toFixed(2)}€.`;
+                mensagem.style.color = "orange";
+                body.style.backgroundColor = "#8B0000"; 
+
+                if (modoJogo === "comPistas") {
+                    const dica = palpite < numeroCorreto ? "O número correto é maior." : "O número correto é menor.";
+                    mensagem.textContent += ` Dica: ${dica}`;
+                }
+
+                atualizarSaldo(-aposta);
+                resultado = "Errou";
+            }
+
+            const novaLinha = document.createElement("tr");
+            novaLinha.innerHTML = `
+                <td>${palpite}</td>
+                <td> ${aposta.toFixed(2)}€</td>
+                <td>${resultado}</td>
+                <td> ${saldo.toFixed(2)}€</td>
+            `;
+            historicoElement.appendChild(novaLinha);
+
+            if (saldo <= 0) {
+                finalizarJogo("O teu saldo acabou!");
+            }
+        }
+    </script>
+</body>
+</html>
